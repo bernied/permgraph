@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm -f permutation*.dot*
+./permgraph -s $1 -d
+find . -iname "*.dot" -exec dot -Tpdf -o'{}'.pdf '{}' \;
+open *.pdf
