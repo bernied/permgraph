@@ -5,7 +5,7 @@ This program will generate the [permutation graph](http://en.wikipedia.org/wiki/
 
 Usage
 -----
-
+```
 Usage: src/permgraph [OPTION]... [FILE]
 
   -h, --help              display this help and exit
@@ -15,4 +15,4 @@ Usage: src/permgraph [OPTION]... [FILE]
   -i, --histogram         generate histogram
   -d, --dot               generate dot files
   -a, --average           print average number of edges for given # of permutations
-
+```
