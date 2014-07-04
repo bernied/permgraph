@@ -54,9 +54,6 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
 {
   init_default_args(args);
   Cmdline(args, argc, argv);
-  // if (argc == 1 || args->optind+1 != argc) {
-  //   usage(-1, argv[0]);
-  // }
 
   if (args->v) {
     printf("permgraph version %s\n", VERSION);
@@ -76,7 +73,7 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
 uint32*
 alloc_permutation(uint32 size)
 {
-  size_t perm_size = (size + 1) * sizeof(uint32); // LAMb: assert here that uint32 == 4 bytes?
+  size_t perm_size = (size + 1) * sizeof(uint32);
   uint32* perm = (uint32*) malloc(perm_size * sizeof(uint32));
   if (!perm) {
     error("Can't allocate enough memory for the permutations.\n");
@@ -168,7 +165,6 @@ LT(uint32 src, uint32 dst)
 uint32*
 invert_permutation(uint32* permutation)
 {
-//  print_perm(stdout, permutation); printf("\t");
   uint32* x = permutation;
   uint32 n = permutation[0];
   int i, j, m;
@@ -181,7 +177,6 @@ invert_permutation(uint32* permutation)
     for (i = m, j = x[m]; j > 0; i = j, j = x[j]);
     x[i] = x[-j - 1], x[-j - 1] = m;
   }
-//  print_perm(stdout, permutation); printf("\n");
   return permutation;
 }
 
@@ -209,7 +204,7 @@ char*
 make_name(char* name, int i)
 {
   int len = strlen(name);
-  sprintf(name+len, "%02d", i);
+  sprintf(name+len, "%03d", i);
   return name;
 }
 
@@ -226,8 +221,6 @@ graph_to_dot(uint32* graph, uint32* permutation, char* name)
   }
 
   fprintf(fp, "graph %s {\n", name);
-    // labelloc="t";
-    // label="My Diagram";
   fprintf(fp, "  labelloc=\"t\";\n");
   fprintf(fp, "  label=\"");
   print_perm(fp, permutation);
@@ -340,10 +333,10 @@ main(int argc, char** argv)
       count += histogram[i];
     }
     double d = sum / (double) count;
-    printf("average: %lu, %lu, %f\n", sum, count, d);
+    printf("average: %llu, %llu, %f\n", sum, count, d);
   }
 
-
+  if (histogram) free(histogram);
   free(permutation);
   free(graph);
   exit(result);

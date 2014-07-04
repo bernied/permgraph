@@ -11,13 +11,9 @@ typedef enum bool_t
 } bool;
 #endif
 
-typedef unsigned char  uint8;
-typedef unsigned short uint16;
-typedef unsigned int  uint32;
-typedef unsigned long uint64;
-// typedef uint8_t  uint8;
-// typedef uint32_t  uint32;
-// typedef uint8_t uint64;
-
+typedef uint8_t uint8;
+typedef uint16_t uint16;
+typedef uint32_t  uint32;
+typedef uint64_t uint64;
 
 #endif
