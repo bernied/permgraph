@@ -1,13 +1,15 @@
 h / help              flag        "  display this help and exit"
 v / version           flag        "  output version information and exit"
 s / size              int         "  size of permutation"
-p / permutation       int         "  lexical permutation"
-i / histogram         flag        "  generate histogram"
-d / dot               flag        "  generate dot files"
+l / lexical           int         "  lexical permutation"
+p / permutation       string      "  comma delimited permutation"
+2 / second            string      "  2nd permutation to apply to first"
 a / average           flag        "  print average number of edges for given # of permutations"
+d / dot               flag        "  generate dot files"
+i / histogram         flag        "  generate histogram"
 
 #usage_begin
-Usage: __PROGRAM_NAME__ [OPTION]... [FILE]
+Usage: __PROGRAM_NAME__ [OPTION]...
 
 __GLOSSARY_GNU__
 

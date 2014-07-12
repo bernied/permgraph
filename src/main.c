@@ -7,7 +7,7 @@
 
 #include "parse_cl.h"
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 
 #define GRAPH_SIZE(x) ((x) * (x-1) / 2)
 
@@ -19,14 +19,14 @@ init_default_args(struct arg_t* args)
   args->h = false;
   args->v = false;
   args->s = -1;
-  args->p = -1;
+  args->l = -1;
   args->i = false;
   args->d = false;
   args->a = false;
 }
 
 /*
- * Provides user feed back on how to use check_deck.
+ * Provides user feed back on how to use permgraph.
  */
 void
 error(char* msg)
@@ -38,17 +38,64 @@ error(char* msg)
 }
 
 /*
+ * Returns number of numbered elements in permutation (by counting ,s).
+ */
+int
+is_valid_permutation(char* perm)
+{
+  if (!perm) {
+    return 0;
+  }
+
+  int i=0, m=1;
+  char* p =perm;;
+  char c = *p++;
+
+  do
+  {
+    if (m)
+    {
+      if (c == ',')
+      {
+        m=0;
+        i++;
+      }
+      else if (c < '0' || c > '9') {
+        return 0;
+      }
+    }
+    else
+    {
+      if (c == ',') {
+        return 0;
+      }
+      else if (c < '0' || c > '9') {
+        return 0;
+      }
+      m=1;
+    }
+
+    c = *p++;
+  } while (c != '\0');
+
+  if (p[-2] == ',') {
+    return 0;
+  }
+
+  return i+1;
+}
+
+/*
 h / help              flag        "  display this help and exit"
 v / version           flag        "  output version information and exit"
 s / size              int         "  size of permutation"
-p / permutation       int         "  lexical permutation"
-i / histogram         flag        "  generate histogram"
-d / dot               flag        "  generate dot files"
+l / lexical           int         "  lexical permutation"
+p / permutation       string      "  comma delimited permutation"
+2 / second            string      "  2nd permutation to apply to first"
 a / average           flag        "  print average number of edges for given # of permutations"
+d / dot               flag        "  generate dot files"
+i / histogram         flag        "  generate histogram"
 */
-/*
- *
- */
 char*
 handle_arguments(int argc, char** argv, struct arg_t* args)
 {
@@ -57,6 +104,45 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
 
   if (args->v) {
     printf("permgraph version %s\n", VERSION);
+  }
+
+  uint32 size1 =0, size2;
+  if (args->p)
+  {
+    if (args->l >= 1) {
+      error("Can't use -p and -l simultaneously.");
+    }
+
+    size1 = is_valid_permutation(args->p);
+    if (!size1) {
+      error("Given permutation (-p) is not a comma delimted permutation.");
+    }
+
+    if (args->_2)
+    {
+      size2 = is_valid_permutation(args->_2);
+      if (!size2) {
+        error("Given 2nd permutation (-2) is not a comma delimted permutation.");
+      }
+
+      if (size1 != size2) {
+        printf("%d, %d\n", size1, size2);
+        error("Given permutation and 2nd permutation are not the same size.");
+      }
+    }
+
+    if (args->s <= 0) {
+      args->s = size1;
+    }
+    else
+    {
+      if (args->s != size1) {
+        error("Given permutation size and specified permutation are not the same size.");
+      }
+    }
+  }
+  else if (args->_2) {
+    error("Must first specify the permtuation (-p) before -2 can be used.");
   }
 
   if (args->s <= 0) {
@@ -71,20 +157,118 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
  * NOTE: position zero contains the size, so the array is 1 based not 0 based!
  */
 uint32*
-alloc_permutation(uint32 size)
+alloc_permutation(uint32 size, bool init)
 {
-  size_t perm_size = (size + 1) * sizeof(uint32);
-  uint32* perm = (uint32*) malloc(perm_size * sizeof(uint32));
+  uint32* perm =NULL;
+  if (init)
+  {
+    size_t perm_size = (size + 1) * sizeof(uint32);
+    perm = (uint32*) malloc(perm_size * sizeof(uint32));
+
+    for (int i=1; i <= size; i++) {
+      perm[i] = i;
+    }
+  }
+  else {
+    perm = (uint32*) calloc(size + 1, sizeof(uint32));
+  }
+
   if (!perm) {
     error("Can't allocate enough memory for the permutations.\n");
   }
   perm[0] = size;
+  return perm;
+}
 
-  for (int i=1; i <= size; i++) {
-    perm[i] = i;
+void
+print_perm(FILE* fp, uint32* permutation)
+{
+  fprintf(fp, "{%u", permutation[1]);
+  for (int i=2; i <= permutation[0]; i++) {
+    fprintf(fp, ", %u", permutation[i]);
+  }
+  fprintf(fp, "}");
+}
+
+void
+check_permutation(uint32* permutation, int i, uint32 v)
+{
+  if (permutation[i] != 0) {
+    error("Invalid permutation: value has already been assigned.");
+  }
+  if (v > permutation[0]) {
+    error("Invalid permutation: value is larger then given permtuation size.");
+  }
+  if (v <= 0) {
+    error("Invalid permutation: value is negative.");
+  }
+}
+
+/*
+ * Assumes the string is in a comma delimted format and has been "validated".
+ */
+void
+str_to_permutation(char* str, uint32* permutation, bool print)
+{
+  char* p =str;
+  char c = *p++;
+  int i=1;
+  uint32 v =0;
+
+  while (c != '\0')
+  {
+    if (print) print_perm(stdout, permutation);
+    if (c == ',')
+    {
+      check_permutation(permutation, i, v);
+      permutation[i] = v;
+      i++;
+      v = 0;
+    }
+    else
+    {
+      v *= 10;
+      v += c - '0';
+    }
+
+    c = *p++;
+  }
+  check_permutation(permutation, i, v);
+  permutation[i] = v;
+  if (print) print_perm(stdout, permutation);
+
+  uint32* inv_perm = alloc_permutation(permutation[0], false);
+  for (i=1; i <= permutation[0]; i++)
+  {
+    if (permutation[i] == 0) {
+      error("Invalid permutation: one of the values has not been assigned.");
+    }
+    if (inv_perm[permutation[i]] != 0) {
+      error("Invalid permutation: one of the values is repeating.");
+    }
+    inv_perm[permutation[i]] = i;
   }
 
-  return perm;
+  free(inv_perm);
+}
+
+void
+apply_permutation(uint32* src, uint32* dst)
+{
+  if (src[0] != dst[0]) {
+    error("Internal error: attempted to apply permutation with wrong size.");
+  }
+
+   uint32* p = alloc_permutation(src[0], false);
+   for (int i=1; i <= src[0]; i++) {
+    p[i] = dst[src[i]];
+   }
+
+   for (int i=1; i <= dst[0]; i++) {
+    dst[i] = p[i];
+   }
+
+   free(p);
 }
 
 uint32*
@@ -129,16 +313,6 @@ lex_permute(uint32 *array, int size)
     array[r--] = tmp;
   }
   return 1;
-}
-
-void
-print_perm(FILE* fp, uint32* permutation)
-{
-  fprintf(fp, "{%u", permutation[1]);
-  for (int i=2; i <= permutation[0]; i++) {
-    fprintf(fp, ", %u", permutation[i]);
-  }
-  fprintf(fp, "}");
 }
 
 uint32
@@ -270,7 +444,7 @@ main(int argc, char** argv)
   file_name = handle_arguments(argc, argv, &args);
 
   int size = args.s;
-  uint32* permutation = alloc_permutation(size);
+  uint32* permutation;
   uint32* graph = alloc_graph(size);
   gs = GRAPH_SIZE(size);
   hgs = gs + 1;
@@ -279,8 +453,32 @@ main(int argc, char** argv)
     histogram = (uint32*) calloc(hgs, sizeof(uint32));
   }
 
-  if (args.p <= 0)
+  if (args.p)
   {
+    permutation = alloc_permutation(size, false);
+    str_to_permutation(args.p, permutation, false);
+    if (args._2)
+    {
+      uint32* p2 = alloc_permutation(size, false);
+      str_to_permutation(args._2, p2, false);
+      apply_permutation(p2, permutation);
+      free(p2);
+    }
+
+    map_perm_to_graph(permutation, graph);
+    if (args.d) {
+      graph_to_dot(graph, permutation, name);
+    }
+    if (histogram) {
+      count_edges(graph, histogram, size);
+    }
+  }
+  else if (args.l <= 0)
+  {
+    if (size > 7) {
+      error("Can not generate more then 7! files.");
+    }
+    permutation = alloc_permutation(size, true);
     uint32 numPerms = factorial(size);
     for (int i=0; i < numPerms; i++)
     {
@@ -297,10 +495,11 @@ main(int argc, char** argv)
   }
   else
   {
+    permutation = alloc_permutation(size, true);
     uint32 numPerms = factorial(size);
     for (int i=0; i < numPerms; i++)
     {
-      if (i == args.p)
+      if (i == args.l)
       {
         map_perm_to_graph(permutation, graph);
         if (args.d) {

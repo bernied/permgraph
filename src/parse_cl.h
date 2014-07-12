@@ -2,7 +2,7 @@
 **
 ** parse_cl.h
 **
-** Sun Jun 29 22:59:31 2014
+** Fri Jul  4 13:12:59 2014
 ** Linux 3.2.0-23-generic-pae (#36-Ubuntu SMP Tue Apr 10 22:19:09 UTC 2012) i686
 ** vagrant@precise32 (vagrant)
 **
@@ -23,10 +23,12 @@ struct arg_t
   bool h;
   bool v;
   int s;
-  int p;
-  bool i;
-  bool d;
+  int l;
+  char * p;
+  char * _2;
   bool a;
+  bool d;
+  bool i;
   int optind;
 };
 
