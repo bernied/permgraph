@@ -12,6 +12,7 @@
 #define GRAPH_SIZE(x) ((x) * (x-1) / 2)
 
 struct arg_t args;
+static char SKAT_CARDS[] = { 'a', '7', '8', '9', '0', 'j', 'q', 'k' };
 
 void
 init_default_args(struct arg_t* args)
@@ -23,6 +24,7 @@ init_default_args(struct arg_t* args)
   args->i = false;
   args->d = false;
   args->a = false;
+  args->c = false;
 }
 
 /*
@@ -85,6 +87,61 @@ is_valid_permutation(char* perm)
   return i+1;
 }
 
+// a 7 8 9 0 j q k
+// 1 2 3 4 5 6 7 8
+void
+convert_skat_permutation(char* p)
+{
+  char* q = p;
+  do
+  {
+    switch(*q)
+    {
+      case '\0':
+        break;
+
+      case ',':
+        break;
+
+      case '0':      // 5
+        *q = '5';
+        break;
+
+      case '7':      // 2
+        *q = '2';
+        break;
+
+      case '8':      // 3
+        *q = '3';
+        break;
+
+      case '9':      // 4
+        *q = '4';
+        break;
+
+      case 'a': case 'A': // 1
+        *q = '1';
+        break;
+
+      case 'j': case 'J': // 6
+        *q = '6';
+        break;
+
+      case 'k': case 'K': // 8
+        *q = '8';
+        break;
+
+      case 'q': case 'Q': // 7
+        *q = '7';
+        break;
+
+      default:
+        printf("%c\n", *q);
+        error("Invalid skat permutation: must be a, 7, 8, 9, 0, j, q or k!");
+    }
+  } while(*q++);
+}
+
 /*
 h / help              flag        "  display this help and exit"
 v / version           flag        "  output version information and exit"
@@ -109,6 +166,13 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
   uint32 size1 =0, size2;
   if (args->p)
   {
+    if (args->c) {
+      convert_skat_permutation(args->p);
+      if (args->_2) {
+        convert_skat_permutation(args->_2);
+      }
+    }
+
     if (args->l >= 1) {
       error("Can't use -p and -l simultaneously.");
     }
@@ -141,8 +205,14 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
       }
     }
   }
-  else if (args->_2) {
-    error("Must first specify the permtuation (-p) before -2 can be used.");
+  else
+  {
+    if (args->_2) {
+      error("Must first specify the permtuation (-p) before -2 can be used.");
+    }
+    else if (args->c) {
+      error("Must use -c/--card with -p/--permutation");
+    }
   }
 
   if (args->s <= 0) {
@@ -197,6 +267,7 @@ check_permutation(uint32* permutation, int i, uint32 v)
     error("Invalid permutation: value has already been assigned.");
   }
   if (v > permutation[0]) {
+    print_perm(stdout, permutation);
     error("Invalid permutation: value is larger then given permtuation size.");
   }
   if (v <= 0) {
@@ -383,7 +454,7 @@ make_name(char* name, int i)
 }
 
 void
-graph_to_dot(uint32* graph, uint32* permutation, char* name)
+graph_to_dot(uint32* graph, uint32* permutation, char* name, bool skat)
 {
   char file_name[100];
   uint32 size = permutation[0];
@@ -398,7 +469,17 @@ graph_to_dot(uint32* graph, uint32* permutation, char* name)
   fprintf(fp, "  labelloc=\"t\";\n");
   fprintf(fp, "  label=\"");
   print_perm(fp, permutation);
-  fprintf(fp, "\";\n\n");
+  fprintf(fp, "\";");
+
+  if (skat)
+  {
+    for (int i=0; i < size; i++)
+    {
+      fprintf(fp, "  %d [ label=\"%c\" ];\n", i+1, SKAT_CARDS[i]);
+    }
+  }
+  fprintf(fp, "\n\n");
+
   for (int i=0; i < size; i++)
   {
     for (int j=i; j < size; j++)
@@ -467,7 +548,7 @@ main(int argc, char** argv)
 
     map_perm_to_graph(permutation, graph);
     if (args.d) {
-      graph_to_dot(graph, permutation, name);
+      graph_to_dot(graph, permutation, name, args.c);
     }
     if (histogram) {
       count_edges(graph, histogram, size);
@@ -484,7 +565,7 @@ main(int argc, char** argv)
     {
       map_perm_to_graph(permutation, graph);
       if (args.d) {
-        graph_to_dot(graph, permutation, make_name(name, i));
+        graph_to_dot(graph, permutation, make_name(name, i), args.c);
       }
       if (histogram) {
         count_edges(graph, histogram, size);
@@ -503,7 +584,7 @@ main(int argc, char** argv)
       {
         map_perm_to_graph(permutation, graph);
         if (args.d) {
-          graph_to_dot(graph, permutation, make_name(name, i));
+          graph_to_dot(graph, permutation, make_name(name, i), args.c);
         }
         name[len] = '\0';
         break;
