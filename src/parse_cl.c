@@ -2,7 +2,7 @@
 **
 ** parse_cl.c
 **
-** Sat Jul 12 19:19:10 2014
+** Sun Jul 13 05:59:27 2014
 ** Linux 3.2.0-23-generic-pae (#36-Ubuntu SMP Tue Apr 10 22:19:09 UTC 2012) i686
 ** vagrant@precise32 (vagrant)
 **
@@ -31,6 +31,7 @@ static struct option const long_options[] =
   {"dot", no_argument, NULL, 'd'},
   {"histogram", no_argument, NULL, 'i'},
   {"cards", no_argument, NULL, 'c'},
+  {"ace", no_argument, NULL, 'e'},
   {NULL, 0, NULL, 0}
 };
 
@@ -57,9 +58,10 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
   my_args->d = false;
   my_args->i = false;
   my_args->c = false;
+  my_args->e = false;
 
   optind = 0;
-  while ((c = getopt_long (argc, argv, "hvs:l:p:2:adic", long_options, &optind)) != - 1)
+  while ((c = getopt_long (argc, argv, "hvs:l:p:2:adice", long_options, &optind)) != - 1)
     {
       switch (c)
         {
@@ -102,6 +104,10 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
 
         case 'c':
           my_args->c = true;
+          break;
+
+        case 'e':
+          my_args->e = true;
           break;
 
         default:
@@ -147,6 +153,7 @@ Usage: %s [OPTION]...\n\
   -d, --dot               generate dot files\n\
   -i, --histogram         generate histogram\n\
   -c, --cards             use skat cards for permutation\n\
+  -e, --ace               ace hi, defaults to ace low\n\
 \n", program_name);
     }
   exit (status);

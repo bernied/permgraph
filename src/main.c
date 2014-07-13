@@ -12,7 +12,8 @@
 #define GRAPH_SIZE(x) ((x) * (x-1) / 2)
 
 struct arg_t args;
-static char SKAT_CARDS[] = { 'a', '7', '8', '9', '0', 'j', 'q', 'k' };
+static char SKAT_CARDS_A_LO[] = { 'A', '7', '8', '9', '0', 'J', 'Q', 'K' };
+static char SKAT_CARDS_A_HI[] = { '7', '8', '9', '0', 'J', 'Q', 'K', 'A' };
 
 void
 init_default_args(struct arg_t* args)
@@ -25,6 +26,7 @@ init_default_args(struct arg_t* args)
   args->d = false;
   args->a = false;
   args->c = false;
+  args->e = false;
 }
 
 /*
@@ -87,10 +89,11 @@ is_valid_permutation(char* perm)
   return i+1;
 }
 
-// a 7 8 9 0 j q k
+// 7 8 9 0 j q k a
 // 1 2 3 4 5 6 7 8
+// a 7 8 9 0 j q k
 void
-convert_skat_permutation(char* p)
+convert_skat_permutation(char* p, bool hi)
 {
   char* q = p;
   do
@@ -103,41 +106,41 @@ convert_skat_permutation(char* p)
       case ',':
         break;
 
-      case '0':      // 5
-        *q = '5';
+      case '0':
+        *q = hi ? '4' : '5';
         break;
 
-      case '7':      // 2
-        *q = '2';
+      case '7':
+        *q = hi ? '1' : '2';
         break;
 
-      case '8':      // 3
-        *q = '3';
+      case '8':
+        *q = hi ? '2' : '3';
         break;
 
-      case '9':      // 4
-        *q = '4';
+      case '9':
+        *q = hi ? '3' : '4';
         break;
 
-      case 'a': case 'A': // 1
-        *q = '1';
+      case 'a': case 'A':
+        *q = hi ? '8' : '1';
         break;
 
-      case 'j': case 'J': // 6
-        *q = '6';
+      case 'j': case 'J':
+        *q = hi ? '5' : '6';
         break;
 
-      case 'k': case 'K': // 8
-        *q = '8';
+      case 'k': case 'K':
+        *q = hi ? '7' : '8';
         break;
 
-      case 'q': case 'Q': // 7
-        *q = '7';
+      case 'q': case 'Q':
+        *q = hi ? '6' : '7';
         break;
 
       default:
         printf("%c\n", *q);
-        error("Invalid skat permutation: must be a, 7, 8, 9, 0, j, q or k!");
+        error("Invalid skat permutation: must be A, 7, 8, 9, 0, J, Q or K!");
     }
   } while(*q++);
 }
@@ -152,6 +155,8 @@ p / permutation       string      "  comma delimited permutation"
 a / average           flag        "  print average number of edges for given # of permutations"
 d / dot               flag        "  generate dot files"
 i / histogram         flag        "  generate histogram"
+c / cards             flag        "  use skat cards for permutation"
+e / ace               flag        "  ace hi, defaults to ace low"
 */
 char*
 handle_arguments(int argc, char** argv, struct arg_t* args)
@@ -167,9 +172,9 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
   if (args->p)
   {
     if (args->c) {
-      convert_skat_permutation(args->p);
+      convert_skat_permutation(args->p, args->e);
       if (args->_2) {
-        convert_skat_permutation(args->_2);
+        convert_skat_permutation(args->_2, args->e);
       }
     }
 
@@ -454,7 +459,7 @@ make_name(char* name, int i)
 }
 
 void
-graph_to_dot(uint32* graph, uint32* permutation, char* name, bool skat)
+graph_to_dot(uint32* graph, uint32* permutation, char* name, bool skat, bool hi)
 {
   char file_name[100];
   uint32 size = permutation[0];
@@ -473,9 +478,15 @@ graph_to_dot(uint32* graph, uint32* permutation, char* name, bool skat)
 
   if (skat)
   {
+    char* cards = hi ? SKAT_CARDS_A_HI : SKAT_CARDS_A_LO;
     for (int i=0; i < size; i++)
     {
-      fprintf(fp, "  %d [ label=\"%c\" ];\n", i+1, SKAT_CARDS[i]);
+      if (cards[i] == '0') {
+        fprintf(fp, "  %d [ label=\"10\" ];\n", i+1);
+      }
+      else {
+        fprintf(fp, "  %d [ label=\"%c\" ];\n", i+1, cards[i]);
+      }
     }
   }
   fprintf(fp, "\n\n");
@@ -548,7 +559,7 @@ main(int argc, char** argv)
 
     map_perm_to_graph(permutation, graph);
     if (args.d) {
-      graph_to_dot(graph, permutation, name, args.c);
+      graph_to_dot(graph, permutation, name, args.c, args.e);
     }
     if (histogram) {
       count_edges(graph, histogram, size);
@@ -565,7 +576,7 @@ main(int argc, char** argv)
     {
       map_perm_to_graph(permutation, graph);
       if (args.d) {
-        graph_to_dot(graph, permutation, make_name(name, i), args.c);
+        graph_to_dot(graph, permutation, make_name(name, i), args.c, args.e);
       }
       if (histogram) {
         count_edges(graph, histogram, size);
@@ -584,7 +595,7 @@ main(int argc, char** argv)
       {
         map_perm_to_graph(permutation, graph);
         if (args.d) {
-          graph_to_dot(graph, permutation, make_name(name, i), args.c);
+          graph_to_dot(graph, permutation, make_name(name, i), args.c, args.e);
         }
         name[len] = '\0';
         break;
