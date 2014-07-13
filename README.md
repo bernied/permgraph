@@ -18,4 +18,5 @@ Usage: ./permgraph [OPTION]...
   -d, --dot               generate dot files
   -i, --histogram         generate histogram
   -c, --cards             use skat cards for permutation
+  -e, --ace               ace hi, defaults to ace low
 ```
