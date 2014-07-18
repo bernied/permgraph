@@ -1,4 +1,5 @@
 #!/bin/sh
 
 rm -f permutation*.dot*
+rm -f *.pdf
 
