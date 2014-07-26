@@ -1,5 +1,6 @@
 #!/bin/sh
 
 rm -f permutation*.dot*
+rm -f circle*.gv*
 rm -f *.pdf
 

@@ -1,6 +1,7 @@
 #!/bin/sh
 
-rm -f permutation*.dot*
-./permgraph -d $@
+rm -f permutation*.dot* circle*.gv*
+./permgraph $@
 find . -iname "*.dot" -exec dot -Tpdf -o'{}'.pdf '{}' \;
+find . -iname "*.gv" -exec ./circ '{}' \;
 open *.pdf

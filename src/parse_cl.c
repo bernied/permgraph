@@ -2,7 +2,7 @@
 **
 ** parse_cl.c
 **
-** Fri Jul 18 05:19:58 2014
+** Thu Jul 24 00:23:26 2014
 ** Linux 3.2.0-23-generic-pae (#36-Ubuntu SMP Tue Apr 10 22:19:09 UTC 2012) i686
 ** vagrant@precise32 (vagrant)
 **
@@ -30,6 +30,7 @@ static struct option const long_options[] =
   {"average", no_argument, NULL, 'a'},
   {"dot", no_argument, NULL, 'd'},
   {"histogram", no_argument, NULL, 'i'},
+  {"circle", no_argument, NULL, 'c'},
   {NULL, 0, NULL, 0}
 };
 
@@ -55,9 +56,10 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
   my_args->a = false;
   my_args->d = false;
   my_args->i = false;
+  my_args->c = false;
 
   optind = 0;
-  while ((c = getopt_long (argc, argv, "hvs:l:p:2:adi", long_options, &optind)) != - 1)
+  while ((c = getopt_long (argc, argv, "hvs:l:p:2:adic", long_options, &optind)) != - 1)
     {
       switch (c)
         {
@@ -96,6 +98,10 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
 
         case 'i':
           my_args->i = true;
+          break;
+
+        case 'c':
+          my_args->c = true;
           break;
 
         default:
@@ -140,6 +146,7 @@ Usage: %s [OPTION]...\n\
   -a, --average           print average number of edges for given # of permutations\n\
   -d, --dot               generate dot files\n\
   -i, --histogram         generate histogram\n\
+  -c, --circle            generate circle graph\n\
 \n", program_name);
     }
   exit (status);

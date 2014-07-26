@@ -7,8 +7,8 @@
 
 #include "parse_cl.h"
 
-#define VERSION "0.2"
-
+#define VERSION "0.3"
+#define FILE_NAME_SIZE 256
 #define GRAPH_SIZE(x) ((x) * (x-1) / 2)
 
 struct arg_t args;
@@ -23,6 +23,7 @@ init_default_args(struct arg_t* args)
   args->i = false;
   args->d = false;
   args->a = false;
+  args->c = false;
 }
 
 /*
@@ -178,7 +179,7 @@ alloc_permutation(uint32 size, bool init)
   }
 
   if (!perm) {
-    error("Can't allocate enough memory for the permutations.\n");
+    error("Unable to allocate memory for the permutations!\n");
   }
   perm[0] = size;
   return perm;
@@ -282,7 +283,7 @@ alloc_graph(uint32 nodes)
   size_t num_verts = GRAPH_SIZE(nodes); // square symetric matrix ignoring diagonal
   uint32* graph = (uint32*) calloc(num_verts, sizeof(uint32));
   if (!graph) {
-    error("Can't allocate enough memory for the graph.\n");
+    error("Unable to allocate memory for the graph!\n");
   }
 
   return graph;
@@ -390,7 +391,7 @@ make_name(char* name, int i)
 void
 graph_to_dot(uint32* graph, uint32* permutation, char* name)
 {
-  char file_name[100];
+  char file_name[FILE_NAME_SIZE];
   uint32 size = permutation[0];
 
   sprintf(file_name, "%s.dot", name);
@@ -421,6 +422,178 @@ graph_to_dot(uint32* graph, uint32* permutation, char* name)
 }
 
 void
+print_node(FILE* fp, Circle* c)
+{
+    fprintf(fp, "%p\t%u\t%p\t%p\t%p\t%s\n",
+                                    c,
+                                    c->p,
+                                    c->next,
+                                    c->prev,
+                                    c->opp,
+                                    c->status ? "prime" : "");
+}
+
+void
+print_circle(FILE* fp, Circle* circle)
+{
+  Circle* c = circle;
+  do
+  {
+    print_node(fp, c);
+    c = c->next;
+  } while (c && c != circle);
+}
+
+void
+map_perm_to_circle(uint32* permutation, Circle* circle)
+{
+  Circle *curr, *n;
+  Circle *prev = circle;
+
+    // Initialize circle w/ prime values
+  for (int i=permutation[0]; i > 0 ; i--)
+  {
+    curr = (Circle*) malloc(sizeof(Circle));
+    if (!curr) {
+      error("Unable to allocate memory for circle node!");
+    }
+    curr->p = permutation[i];
+    curr->status = true;
+    curr->opp = NULL;
+    curr->prev = prev;
+    prev->next = curr;
+    prev = curr;
+  }
+  curr->next = circle;
+  circle->prev = curr;
+
+  bool* skipped = (bool*) calloc(permutation[0]+1, sizeof(bool));
+  if (!skipped) {
+    error("Unable to allocate memory for circle skip detection!");
+  }
+
+    // Initialize the non-prime fields
+  for (uint32 i=1; i <= permutation[0]; i++)
+  {
+    if (skipped[i] == false)
+    {
+      // skip to right before i
+      while(curr != circle)
+      {
+        skipped[curr->p] = true;
+        curr = curr->prev;
+        if (curr->p == i) {
+          break;
+        }
+      }
+    }
+
+    // draw node
+    n = (Circle*) malloc(sizeof(Circle));
+    if (!n) {
+      error("Unable to allocate node for circle!");
+    }
+    n->p = i;
+    n->status = false;
+    n->opp = NULL;
+    n->prev = curr->prev;
+    n->next = curr;
+    curr->prev->next = n;
+    curr->prev = n;
+    skipped[i] = true;
+    curr = n;
+  }
+
+  // assign "opp" values to its corresponding opposite
+  // This is a stupid O(N^2) algorithm. But its good enough.
+  for (int i=1; i <= permutation[0]; i++)
+  {
+    curr = circle;
+    n = NULL;
+    while (curr)
+    {
+      if (curr->p == i)
+      {
+        n = curr;
+        break;
+      }
+      curr = curr->next;
+    }
+
+    curr = curr->next;
+    while (curr)
+    {
+      if (curr->p == i)
+      {
+        n->opp = curr;
+        curr->opp = n;
+        break;
+      }
+      curr = curr->next;
+    }
+  }
+}
+
+void
+circle_to_gv(Circle* circle, uint32* permutation, char* name)
+{
+  Circle *c, *d;
+  uint32 size = permutation[0];
+  char file_name[FILE_NAME_SIZE];
+
+  sprintf(file_name, "%s.gv", name);
+  FILE* fp = fopen(file_name, "w+");
+  if (fp == NULL) {
+    error("Unable to open file.\n");
+  }
+
+  fprintf(fp, "graph %s {\n", name);
+  fprintf(fp, "  label=\"");
+  print_perm(fp, permutation);
+  fprintf(fp, "\";");
+
+  c = circle->prev;
+  do
+  {
+    if (c->status) {
+      fprintf(fp, "p%u [shape=\"point\",xlabel=\"%u'\"];\n", c->p, c->p);
+    }
+    else {
+      fprintf(fp, "n%u [shape=\"point\",xlabel=\"%u\"];\n", c->p, c->p);
+    }
+    c = c->prev;
+  } while (c && c != circle);
+
+  fprintf(fp, "\n");
+  c = circle->prev;
+  while (c && c != circle) // LAMb: this is broken!
+  {
+    fprintf(fp, "%s%u -- ", c->status ? "p" : "n", c->p);
+    c = c->prev;
+  }
+  c = circle->prev; // LAMb: fix this as above!
+  fprintf(fp, "%s%u", c->status ? "p" : "n", c->p);
+  fprintf(fp, " [style=\"solid\",splines=\"curved\"];\n");
+
+  fprintf(fp, "\n");
+  for (uint32 i=1; i <= size; i++) {
+    fprintf(fp, "n%u -- p%u;\n", i, i); // LAMb: replace w/ opp check loop
+  }
+/*
+  c = circle->next;
+  bool
+  do
+  {
+    if (c->p != c->next->p) {
+      fprintf(fp, "  n%u -- p%u;\n", c->p, c->p);
+    }
+  } while (c && c != circle);
+*/
+  fprintf(fp, "\n}\n");
+  fclose(fp);
+}
+
+void
 count_edges(uint32* graph, uint32* histogram, uint32 size)
 {
   uint32 gs = GRAPH_SIZE(size);
@@ -433,6 +606,19 @@ count_edges(uint32* graph, uint32* histogram, uint32 size)
   histogram[s]++;
 }
 
+Circle*
+perm_to_circle_to_gv(uint32* permutation, char* name)
+{
+  Circle* circle = (Circle*) calloc(1, sizeof(Circle));
+  if (!circle) {
+    error("Unable to allocate memory for Circle graph!");
+  }
+  map_perm_to_circle(permutation, circle);
+  circle_to_gv(circle, permutation, name);
+
+  return circle;
+}
+
 /*
  *
  */
@@ -442,8 +628,10 @@ main(int argc, char** argv)
   int result;
   struct stat sb;
   char* file_name;
-  char name[100] = "permutation";
+  char name[FILE_NAME_SIZE] = "permutation";
+  char cname[FILE_NAME_SIZE] = "circle";
   int len = strlen(name);
+  int clen = strlen(cname);
   uint32* histogram =NULL;
   uint32 gs, hgs;
 
@@ -458,6 +646,9 @@ main(int argc, char** argv)
 
   if (args.i || args.a) {
     histogram = (uint32*) calloc(hgs, sizeof(uint32));
+    if (!histogram) {
+      error("Unable to allocate memory for histogram!");
+    }
   }
 
   if (args.p)
@@ -476,6 +667,9 @@ main(int argc, char** argv)
     if (args.d) {
       graph_to_dot(graph, permutation, name);
     }
+    if (args.c) {
+      perm_to_circle_to_gv(permutation, cname);
+    }
     if (histogram) {
       count_edges(graph, histogram, size);
     }
@@ -493,10 +687,14 @@ main(int argc, char** argv)
       if (args.d) {
         graph_to_dot(graph, permutation, make_name(name, i));
       }
+      if (args.c) {
+        perm_to_circle_to_gv(permutation, make_name(cname, i));
+      }
       if (histogram) {
         count_edges(graph, histogram, size);
       }
       name[len] = '\0';
+      cname[clen] = '\0';
       lex_permute(permutation+1, size);
     }
   }
@@ -512,7 +710,11 @@ main(int argc, char** argv)
         if (args.d) {
           graph_to_dot(graph, permutation, make_name(name, i));
         }
+        if (args.c) {
+          perm_to_circle_to_gv(permutation, make_name(cname, i));
+        }
         name[len] = '\0';
+        cname[clen] = '\0';
         break;
       }
       lex_permute(permutation+1, size);
@@ -542,8 +744,6 @@ main(int argc, char** argv)
     printf("average: %llu, %llu, %f\n", sum, count, d);
   }
 
-  if (histogram) free(histogram);
-  free(permutation);
-  free(graph);
+  // no need to free since we are exiting now
   exit(result);
 }

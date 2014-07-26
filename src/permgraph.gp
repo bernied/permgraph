@@ -7,6 +7,7 @@ p / permutation       string      "  comma delimited permutation"
 a / average           flag        "  print average number of edges for given # of permutations"
 d / dot               flag        "  generate dot files"
 i / histogram         flag        "  generate histogram"
+c / circle            flag        "  generate circle graph"
 
 #usage_begin
 Usage: __PROGRAM_NAME__ [OPTION]...

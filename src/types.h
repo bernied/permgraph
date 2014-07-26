@@ -1,3 +1,4 @@
+
 #ifndef __TYPES__
 #define __TYPES__
 
@@ -15,5 +16,14 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t  uint32;
 typedef uint64_t uint64;
+
+typedef struct Circle
+{
+  struct Circle* next;
+  struct Circle* prev;
+  struct Circle* opp;
+  bool status;
+  uint32 p;
+} Circle;
 
 #endif

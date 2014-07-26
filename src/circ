@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gvpr -c -fcirc.g $1 | neato -n -Tpdf -o $1.pdf
