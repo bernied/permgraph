@@ -17,4 +17,5 @@ Usage: ./permgraph [OPTION]...
   -a, --average           print average number of edges for given # of permutations
   -d, --dot               generate dot files
   -i, --histogram         generate histogram
+  -c, --circle            generate circle graph
 ```
