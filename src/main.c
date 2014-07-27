@@ -548,6 +548,7 @@ circle_to_gv(Circle* circle, uint32* permutation, char* name)
   }
 
   fprintf(fp, "graph %s {\n", name);
+  fprintf(fp, "  labelloc=\"t\";\n");
   fprintf(fp, "  label=\"");
   print_perm(fp, permutation);
   fprintf(fp, "\";");
