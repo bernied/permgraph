@@ -18,4 +18,5 @@ Usage: ./permgraph [OPTION]...
   -d, --dot               generate dot files
   -i, --histogram         generate histogram
   -c, --circle            generate circle graph
+  -n, --invert            include inverted version of permutation
 ```

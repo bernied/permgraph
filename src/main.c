@@ -7,7 +7,7 @@
 
 #include "parse_cl.h"
 
-#define VERSION "0.3"
+#define VERSION "0.4"
 #define FILE_NAME_SIZE 256
 #define GRAPH_SIZE(x) ((x) * (x-1) / 2)
 
@@ -24,6 +24,7 @@ init_default_args(struct arg_t* args)
   args->d = false;
   args->a = false;
   args->c = false;
+  args->n = false;
 }
 
 /*
@@ -86,18 +87,6 @@ is_valid_permutation(char* perm)
   return i+1;
 }
 
-
-/*
-h / help              flag        "  display this help and exit"
-v / version           flag        "  output version information and exit"
-s / size              int         "  size of permutation"
-l / lexical           int         "  lexical permutation"
-p / permutation       string      "  comma delimited permutation"
-2 / second            string      "  2nd permutation to apply to first"
-a / average           flag        "  print average number of edges for given # of permutations"
-d / dot               flag        "  generate dot files"
-i / histogram         flag        "  generate histogram"
-*/
 char*
 handle_arguments(int argc, char** argv, struct arg_t* args)
 {
@@ -631,6 +620,8 @@ main(int argc, char** argv)
   char* file_name;
   char name[FILE_NAME_SIZE] = "permutation";
   char cname[FILE_NAME_SIZE] = "circle";
+  char inv_name[FILE_NAME_SIZE] = "permutation_inv";
+  char inv_cname[FILE_NAME_SIZE] = "circle_inv";
   int len = strlen(name);
   int clen = strlen(cname);
   uint32* histogram =NULL;
@@ -671,14 +662,30 @@ main(int argc, char** argv)
     if (args.c) {
       perm_to_circle_to_gv(permutation, cname);
     }
+
     if (histogram) {
       count_edges(graph, histogram, size);
     }
+
+    if (args.n)
+    {
+      if (args.d)
+      {
+        uint32* igraph = alloc_graph(size);
+        invert_permutation(permutation);
+        map_perm_to_graph(permutation, igraph);
+        graph_to_dot(igraph, permutation, inv_name);
+      }
+      if (args.c) {
+        perm_to_circle_to_gv(permutation, inv_cname);
+      }
+    }
+
   }
   else if (args.l <= 0)
   {
     if (size > 7) {
-      error("Can not generate more then 7! files.");
+      error("Can not generate more then 6! files.");
     }
     permutation = alloc_permutation(size, true);
     uint32 numPerms = factorial(size);
@@ -714,8 +721,21 @@ main(int argc, char** argv)
         if (args.c) {
           perm_to_circle_to_gv(permutation, make_name(cname, i));
         }
-        name[len] = '\0';
-        cname[clen] = '\0';
+
+        if (args.n)
+        {
+          uint32* igraph = alloc_graph(size);
+          invert_permutation(permutation);
+          if (args.d)
+          {
+            map_perm_to_graph(permutation, igraph);
+            graph_to_dot(igraph, permutation, make_name(inv_name, i));
+          }
+          if (args.c) {
+            perm_to_circle_to_gv(permutation, make_name(inv_cname, i));
+          }
+        }
+
         break;
       }
       lex_permute(permutation+1, size);
@@ -745,6 +765,7 @@ main(int argc, char** argv)
     printf("average: %llu, %llu, %f\n", sum, count, d);
   }
 
-  // no need to free since we are exiting now
+  // We don't do any memory free'ing since this is a small application
+  // and it doesn't use much memory.
   exit(result);
 }

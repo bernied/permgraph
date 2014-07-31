@@ -8,6 +8,7 @@ a / average           flag        "  print average number of edges for given # o
 d / dot               flag        "  generate dot files"
 i / histogram         flag        "  generate histogram"
 c / circle            flag        "  generate circle graph"
+n / invert            flag        "  include inverted version of permutation"
 
 #usage_begin
 Usage: __PROGRAM_NAME__ [OPTION]...
