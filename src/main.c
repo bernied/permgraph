@@ -8,7 +8,7 @@
 
 #include "parse_cl.h"
 
-#define VERSION "0.4"
+#define VERSION "0.5"
 #define FILE_NAME_SIZE 256
 #define GRAPH_SIZE(x) ((x) * (x-1) / 2)
 
