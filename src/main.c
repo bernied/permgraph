@@ -700,8 +700,6 @@ main(int argc, char** argv)
     {
       permutation = alloc_permutation(size, true);
       randomize_permutation(permutation);
-      print_perm(stdout, permutation);
-      printf("\n");
     }
     else if (args.p)
     {
