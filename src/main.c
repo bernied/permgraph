@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 
 #include "parse_cl.h"
 
@@ -20,6 +21,7 @@ init_default_args(struct arg_t* args)
   args->v = false;
   args->s = -1;
   args->l = -1;
+  args->r = false;
   args->i = false;
   args->d = false;
   args->a = false;
@@ -100,8 +102,8 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
   uint32 size1 =0, size2;
   if (args->p)
   {
-    if (args->l >= 1) {
-      error("Can't use -p and -l simultaneously.");
+    if (args->l >= 1 || args->r) {
+      error("Can't use -p, -l or -r simultaneously.");
     }
 
     size1 = is_valid_permutation(args->p);
@@ -139,8 +141,18 @@ handle_arguments(int argc, char** argv, struct arg_t* args)
     }
   }
 
+  if (args->l >= 1 && args->r) {
+      error("Can't use -p, -l or -r simultaneously.");
+  }
+
   if (args->s <= 0) {
     error("Must specify size of permutations.\n");
+  }
+
+  if (args->r)
+  {
+    unsigned int seed = time(NULL);
+    srand(seed);
   }
 
   return argv[args->optind];
@@ -177,11 +189,11 @@ alloc_permutation(uint32 size, bool init)
 void
 print_perm(FILE* fp, uint32* permutation)
 {
-  fprintf(fp, "{%u", permutation[1]);
+  fprintf(fp, "(%u", permutation[1]);
   for (int i=2; i <= permutation[0]; i++) {
     fprintf(fp, ", %u", permutation[i]);
   }
-  fprintf(fp, "}");
+  fprintf(fp, ")");
 }
 
 void
@@ -196,6 +208,45 @@ check_permutation(uint32* permutation, int i, uint32 v)
   }
   if (v <= 0) {
     error("Invalid permutation: value is negative.");
+  }
+}
+
+/*
+ * Random number n where i <= n <= j
+ */
+uint32
+rand_uint32(uint32 i, uint32 j)
+{
+  assert(i > 0); // permutation arrays are 1 based
+  assert(j >= i);
+
+  uint32 d = j - i + 1;  // 1 <= d <= j
+
+  // get unbiased random value
+  uint32 r, rm = RAND_MAX - ((RAND_MAX+1L) % (uint64)d);
+  do {
+    r = rand();
+  } while (r > rm);      // 0 <= r <= rm
+
+  uint32 x = r % d;      // 0 <= x <= d - 1
+  uint32 n = x + i;      // i <= n <= j
+
+  assert(n >= i);
+  assert(n <= j);
+
+  return n;
+}
+
+void
+randomize_permutation(uint32* permutation)
+{
+  uint32 size = permutation[0], tmp;
+  for (uint32 i = 1; i <= size-1; i++)
+  {
+      uint32 j = rand_uint32(i, size);
+      tmp = permutation[i];
+      permutation[i] = permutation[j];
+      permutation[j] = tmp;
   }
 }
 
@@ -643,10 +694,23 @@ main(int argc, char** argv)
     }
   }
 
-  if (args.p)
+  if (args.p || args.r)
   {
-    permutation = alloc_permutation(size, false);
-    str_to_permutation(args.p, permutation, false);
+    if (args.r)
+    {
+      permutation = alloc_permutation(size, true);
+      randomize_permutation(permutation);
+      print_perm(stdout, permutation);
+      printf("\n");
+    }
+    else if (args.p)
+    {
+      permutation = alloc_permutation(size, false);
+      str_to_permutation(args.p, permutation, false);
+    }
+    else {
+      error("Missing a permutation: expected -p or -r to be set!");
+    }
     if (args._2)
     {
       uint32* p2 = alloc_permutation(size, false);

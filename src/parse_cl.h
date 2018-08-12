@@ -2,13 +2,13 @@
 **
 ** parse_cl.h
 **
-** Sun Jul 27 16:28:51 2014
-** Linux 3.2.0-23-generic-pae (#36-Ubuntu SMP Tue Apr 10 22:19:09 UTC 2012) i686
-** vagrant@precise32 (vagrant)
+** Sat Aug 11 18:57:21 2018
+** Darwin 16.7.0 (Darwin Kernel Version 16.7.0: Wed Oct  4 00:17:00 PDT 2017; root:xnu-3789.71.6~1/RELEASE_X86_64) x86_64
+** bernied@ptah.local. (Bernhard Damberger)
 **
 ** Header file for command line parser
 **
-** Automatically created by genparse v0.8.7
+** Automatically created by genparse v0.9.3
 **
 ** See http://genparse.sourceforge.net for details and updates
 **
@@ -24,6 +24,7 @@ struct arg_t
   bool v;
   int s;
   int l;
+  bool r;
   char * p;
   char * _2;
   bool a;

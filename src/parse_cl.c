@@ -2,13 +2,13 @@
 **
 ** parse_cl.c
 **
-** Sun Jul 27 16:28:51 2014
-** Linux 3.2.0-23-generic-pae (#36-Ubuntu SMP Tue Apr 10 22:19:09 UTC 2012) i686
-** vagrant@precise32 (vagrant)
+** Sat Aug 11 18:57:21 2018
+** Darwin 16.7.0 (Darwin Kernel Version 16.7.0: Wed Oct  4 00:17:00 PDT 2017; root:xnu-3789.71.6~1/RELEASE_X86_64) x86_64
+** bernied@ptah.local. (Bernhard Damberger)
 **
 ** C file for command line parser
 **
-** Automatically created by genparse v0.8.7
+** Automatically created by genparse v0.9.3
 **
 ** See http://genparse.sourceforge.net for details and updates
 **
@@ -25,6 +25,7 @@ static struct option const long_options[] =
   {"version", no_argument, NULL, 'v'},
   {"size", required_argument, NULL, 's'},
   {"lexical", required_argument, NULL, 'l'},
+  {"random", no_argument, NULL, 'r'},
   {"permutation", required_argument, NULL, 'p'},
   {"second", required_argument, NULL, '2'},
   {"average", no_argument, NULL, 'a'},
@@ -52,6 +53,7 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
 
   my_args->h = false;
   my_args->v = false;
+  my_args->r = false;
   my_args->p = NULL;
   my_args->_2 = NULL;
   my_args->a = false;
@@ -61,7 +63,7 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
   my_args->n = false;
 
   optind = 0;
-  while ((c = getopt_long (argc, argv, "hvs:l:p:2:adicn", long_options, &optind)) != - 1)
+  while ((c = getopt_long (argc, argv, "hvs:l:rp:2:adicn", long_options, &optind)) != - 1)
     {
       switch (c)
         {
@@ -80,6 +82,10 @@ void Cmdline (struct arg_t *my_args, int argc, char *argv[])
 
         case 'l':
           my_args->l = atoi (optarg);
+          break;
+
+        case 'r':
+          my_args->r = true;
           break;
 
         case 'p':
@@ -147,6 +153,7 @@ Usage: %s [OPTION]...\n\
   -v, --version           output version information and exit\n\
   -s, --size              size of permutation\n\
   -l, --lexical           lexical permutation\n\
+  -r, --random            random permutation\n\
   -p, --permutation       comma delimited permutation\n\
   -2, --second            2nd permutation to apply to first\n\
   -a, --average           print average number of edges for given # of permutations\n\

@@ -12,11 +12,11 @@ Usage: ./permgraph [OPTION]...
   -v, --version           output version information and exit
   -s, --size              size of permutation
   -l, --lexical           lexical permutation
+  -r, --random            random permutation
   -p, --permutation       comma delimited permutation
   -2, --second            2nd permutation to apply to first
   -a, --average           print average number of edges for given # of permutations
   -d, --dot               generate dot files
   -i, --histogram         generate histogram
   -c, --circle            generate circle graph
-  -n, --invert            include inverted version of permutation
-```
+  -n, --invert            include inverted version of permutation```
